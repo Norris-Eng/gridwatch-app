@@ -1,0 +1,84 @@
+# File: .github/workflows/build-api.yml
+
+# 1. Workflow Name
+name: Build and Push Backend API
+
+# 2. Trigger
+# This workflow runs on any push to the 'main' branch
+on:
+  push:
+    branches: [ "main" ]
+
+# 3. Define the jobs
+jobs:
+  # ------------------------------------
+  # JOB 1: Lint the Python code
+  # ------------------------------------
+  lint:
+    name: Lint Python Code
+    runs-on: ubuntu-latest # Use a Linux runner
+
+    steps:
+      # Step 1.1: Check out the repository code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Step 1.2: Set up the Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Step 1.3: Install Flake8 linter
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      # Step 1.4: Run the linter on the backend folder
+      - name: Lint with Flake8
+        run: |
+          flake8 backend/ --count --show-source --statistics
+
+  # ------------------------------------
+  # JOB 2: Build and Push the image
+  # ------------------------------------
+  build-and-push:
+    name: Build and Push to ACR
+    runs-on: ubuntu-latest
+    
+    # This job only runs if the 'lint' job succeeds
+    needs: lint
+
+    steps:
+      # Step 2.1: Check out the repository code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Step 2.2: Log in to Azure
+      # This uses the AZURE_CREDENTIALS secret
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 2.3: Log in to the Azure Container Registry
+      # This uses the ACR_LOGIN_SERVER secret
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ steps.azure_login.outputs.username }}
+          password: ${{ steps.azure_login.outputs.password }}
+        id: azure_login
+
+      # Step 2.4: Build and push the Docker image
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend # Look for the Dockerfile in ./backend
+          file: ./backend/Dockerfile
+          push: true # Push the image
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:latest
+            ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:${{ github.sha }}
