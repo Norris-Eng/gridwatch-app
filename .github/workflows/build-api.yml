@@ -61,6 +61,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+        id: login_to_azure
 
       # Step 2.3: Log in to the Azure Container Registry
       # This uses the ACR_LOGIN_SERVER secret
@@ -68,9 +69,9 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ACR_LOGIN_SERVER }}
-          username: ${{ steps.azure_login.outputs.username }}
-          password: ${{ steps.azure_login.outputs.password }}
-        id: azure_login
+          # --- REFERENCE THE CORRECT STEP ID ---
+          username: ${{ steps.login_to_azure.outputs.username }}
+          password: ${{ steps.login_to_azure.outputs.password }}
 
       # Step 2.4: Build and push the Docker image
       - name: Build and push API image
