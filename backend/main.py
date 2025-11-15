@@ -8,6 +8,7 @@ db_host = os.getenv("DB_HOST", "db_host_not_set")
 db_user = os.getenv("DB_USER", "db_user_not_set")
 db_name = os.getenv("DB_NAME", "db_name_not_set")
 
+
 @app.get("/")
 def read_root():
     """
