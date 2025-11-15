@@ -55,31 +55,22 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Step 2.2: Log in to Azure
-      # This uses the AZURE_CREDENTIALS secret
-      - name: Log in to Azure
-        uses: azure/login@v1
+      # Step 2.2: Log in to Azure and ACR
+      # This single action logs into Azure using the creds
+      # and then logs Docker into the specified ACR.
+      - name: Log in to Azure and ACR
+        uses: azure/docker-login@v1
         with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        id: login_to_azure
 
-      # Step 2.3: Log in to the Azure Container Registry
-      # This uses the ACR_LOGIN_SERVER secret
-      - name: Log in to ACR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }}
-          # --- REFERENCE THE CORRECT STEP ID ---
-          username: ${{ steps.login_to_azure.outputs.username }}
-          password: ${{ steps.login_to_azure.outputs.password }}
-
-      # Step 2.4: Build and push the Docker image
+      # Step 2.3: Build and push the Docker image
       - name: Build and push API image
         uses: docker/build-push-action@v5
         with:
           context: ./backend # Look for the Dockerfile in ./backend
           file: ./backend/Dockerfile
-          push: true # Push the image
+          push: true # We want to push the image
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:latest
             ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:${{ github.sha }}
