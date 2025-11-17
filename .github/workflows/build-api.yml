@@ -39,10 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint # Only runs if lint succeeds
     
-    # This exposes the new image tag to other jobs
-    outputs:
-      image_tag: ${{ steps.build_image.outputs.image_tag }}
-
     steps:
       # Step 2.1: Check out the repository code
       - name: Check out code
@@ -58,15 +54,13 @@ jobs:
 
       # Step 2.3: Build and push the Docker image
       - name: Build and push API image
-        id: build_image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
+          # Tag the image with the unique commit SHA
           tags: ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:${{ github.sha }}
-          # Here defining an output for this step
-          outputs: type=registry,name=${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api,tag=${{ github.sha }}
 
   # ------------------------------------
   # JOB 3: Deploy to Container App
@@ -80,7 +74,6 @@ jobs:
 
     steps:
       # Step 3.1: Log in to Azure
-      # Use the full JSON creds here for az CLI access
       - name: Log in to Azure
         uses: azure/login@v1
         with:
@@ -97,7 +90,7 @@ jobs:
           az containerapp update \
             --name gridwatch-api \
             --resource-group gridwatch-app-rg \
-            --image ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:${{ needs.build-and-push.outputs.image_tag }}
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/gridwatch-api:${{ github.sha }}
 
       # Step 3.4: Log out of Azure
       - name: Log out
