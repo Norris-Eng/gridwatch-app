@@ -31,3 +31,8 @@ def health_check():
     Health check endpoint for the container.
     """
     return {"status": "ok"}
+
+
+# --- Adding dummy comment ---
+# Forcing a new pipeline run
+# -------------------------------
