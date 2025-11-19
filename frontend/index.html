@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GridWatch Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; text-align: center; }
+        .card { background: white; padding: 20px; margin: 20px auto; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1 { color: #333; }
+        .status { font-weight: bold; color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>⚡ GridWatch Live</h1>
+    
+    <div class="card">
+        <h3>API Status</h3>
+        <p id="api-status">Loading...</p>
+    </div>
+
+    <div class="card">
+        <h3>Database Connection</h3>
+        <pre id="db-info" style="text-align: left; font-size: 0.9em; overflow-x: auto;">Waiting for API...</pre>
+    </div>
+
+    <script>
+        // Fetch data from the Nginx proxy at /api/
+        fetch('/api/') 
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-status').innerText = data.message;
+                document.getElementById('api-status').className = 'status';
+                document.getElementById('db-info').innerText = JSON.stringify(data.database_connection, null, 2);
+            })
+            .catch(err => {
+                document.getElementById('api-status').innerText = "Offline / Error";
+                document.getElementById('api-status').className = 'error';
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
