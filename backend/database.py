@@ -9,8 +9,10 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 
-# Use the postgresql+asyncpg driver for high-performance async support
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+# We use the postgresql+asyncpg driver for high-performance async support
+DATABASE_URL = (
+    f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+)
 
 # 2. Create the Database Engine
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -25,6 +27,7 @@ SessionLocal = sessionmaker(
 # 4. Create the Base class for models
 Base = declarative_base()
 
+
 # Dependency to get a DB session in API endpoints
 async def get_db():
     async with SessionLocal() as session:
@@ -32,3 +35,4 @@ async def get_db():
             yield session
         finally:
             await session.close()
+            
