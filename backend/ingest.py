@@ -32,7 +32,6 @@ async def fetch_and_store_data():
         "api_key": api_key,
         "frequency": "hourly",
         "data[0]": "value",
-        "facets[respondent][]": "US48",  # Lower 48 states
         "start": start_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "end": end_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "sort[0][column]": "period",
