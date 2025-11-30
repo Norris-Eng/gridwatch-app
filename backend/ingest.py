@@ -1,7 +1,7 @@
 import asyncio
 import os
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from database import SessionLocal
 from models import EnergyGeneration
@@ -24,14 +24,16 @@ async def fetch_and_store_data():
     print("🚀 Starting data ingestion...")
 
     # 1. Define the time range (Last 24 hours)
-    # EIA data often has a slight lag, so looking back a bit.
-    end_time = datetime.utcnow()
+    # Use timezone-aware UTC objects to satisfy modern Python standards
+    # Look back 1 hour to ensure data has settled in EIA's system
+    end_time = datetime.now(timezone.utc) - timedelta(hours=1)
     start_time = end_time - timedelta(hours=24)
 
     params = {
         "api_key": api_key,
         "frequency": "hourly",
         "data[0]": "value",
+        "facets[respondent][]": "PJM",  # Filter for PJM Interconnection
         "start": start_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "end": end_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "sort[0][column]": "period",
@@ -68,9 +70,7 @@ async def fetch_and_store_data():
             value = float(item.get("value", 0))
             ts_str = item.get("period")  # e.g., "2023-10-27T08:00:00"
 
-            # Simple deduplication check:
-            # In a real app, I'd use an 'upsert' statement.
-            # Here, just check if a record exists for this time + fuel.
+            # Parse string to datetime object
             ts = datetime.strptime(ts_str, "%Y-%m-%dT%H")
 
             stmt = select(EnergyGeneration).where(
