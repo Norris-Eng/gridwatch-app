@@ -8,35 +8,50 @@
         body { font-family: sans-serif; background: #f4f4f9; padding: 20px; text-align: center; }
         .card { background: white; padding: 20px; margin: 20px auto; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
         h1 { color: #333; }
-        .status { font-weight: bold; color: #28a745; }
-        .error { color: #dc3545; }
+        .status-ok { font-weight: bold; color: #28a745; }
+        .status-err { color: #dc3545; }
+        .status-warn { color: #ffc107; }
     </style>
 </head>
 <body>
     <h1>⚡ GridWatch Live</h1>
-    
+
     <div class="card">
-        <h3>API Status</h3>
-        <p id="api-status">Loading...</p>
+        <h3>API System Status</h3>
+        <p>Backend: <span id="api-status">Loading...</span></p>
+        <p>EIA Key: <span id="key-status">Checking...</span></p>
     </div>
 
     <div class="card">
         <h3>Database Connection</h3>
-        <pre id="db-info" style="text-align: left; font-size: 0.9em; overflow-x: auto;">Waiting for API...</pre>
+        <pre id="db-info" style="text-align: left; font-size: 0.9em; overflow-x: auto;">Waiting...</pre>
     </div>
 
     <script>
-        // Fetch data from the Nginx proxy at /api/
-        fetch('/api/') 
+        fetch('/api/')
             .then(response => response.json())
             .then(data => {
-                document.getElementById('api-status').innerText = data.message;
-                document.getElementById('api-status').className = 'status';
+                // 1. Update Backend Status
+                const apiElem = document.getElementById('api-status');
+                apiElem.innerText = "Online";
+                apiElem.className = 'status-ok';
+
+                // 2. Update API Key Status
+                const keyElem = document.getElementById('key-status');
+                if (data.api_key_status === 'Loaded') {
+                    keyElem.innerText = "Loaded Securely";
+                    keyElem.className = 'status-ok';
+                } else {
+                    keyElem.innerText = "Missing";
+                    keyElem.className = 'status-err';
+                }
+
+                // 3. Update DB Info
                 document.getElementById('db-info').innerText = JSON.stringify(data.database_connection, null, 2);
             })
             .catch(err => {
-                document.getElementById('api-status').innerText = "Offline / Error";
-                document.getElementById('api-status').className = 'error';
+                document.getElementById('api-status').innerText = "Offline";
+                document.getElementById('api-status').className = 'status-err';
                 console.error(err);
             });
     </script>
