@@ -1,23 +1,20 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from database import engine, Base
-import models  # noqa: F401
+from fastapi import FastAPI, Depends
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import engine, Base, get_db
+from models import EnergyGeneration
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Lifespan events: Code to run before the app starts
-    and after it shuts down.
+    Lifespan events: Create tables on startup.
     """
-    # 1. Create Database Tables
-    # This connects to the DB and creates tables defined in models.py
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
     yield
-    # (Shutdown code could go here)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -29,12 +26,7 @@ eia_key = os.getenv("EIA_API_KEY", "not_set")
 
 @app.get("/")
 def read_root():
-    """
-    Root endpoint.
-    """
-    # Hide the actual key in response, just show if it's loaded
     key_status = "Loaded" if eia_key != "not_set" else "Missing"
-
     return {
         "message": "GridWatch API is running.",
         "database_connection": {
@@ -48,3 +40,18 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/history")
+async def get_history(db: AsyncSession = Depends(get_db)):
+    """
+    Fetch the last 50 data points from the database.
+    """
+    # Query: Select all records, newest first, limit 50
+    result = await db.execute(
+        select(EnergyGeneration)
+        .order_by(EnergyGeneration.timestamp.desc())
+        .limit(50)
+    )
+    records = result.scalars().all()
+    return records
