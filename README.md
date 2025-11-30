@@ -1,4 +1,4 @@
-# ⚡ GridWatch: Real-Time Energy Grid Visualization
+# GridWatch: Real-Time Energy Grid Visualization
 
 ![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
 ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
@@ -14,10 +14,10 @@ This project implements a **Hub-and-Spoke** style architecture within a secure V
 
 ```mermaid
 graph TD
-    subgraph Azure_Cloud [Microsoft Azure Region]
-        subgraph VNet [Virtual Network (10.0.0.0/16)]
+    subgraph Azure_Cloud ["Microsoft Azure Region"]
+        subgraph VNet ["Virtual Network (10.0.0.0/16)"]
 
-            subgraph App_Subnet [App Subnet (10.0.2.0/23)]
+            subgraph App_Subnet ["App Subnet (10.0.2.0/23)"]
                 ACA_Env[Container App Environment]
 
                 subgraph Web_Tier [Frontend]
@@ -29,8 +29,8 @@ graph TD
                 end
             end
 
-            subgraph Data_Subnet [Data Subnet (10.0.4.0/24)]
-                Postgres[(Azure PostgreSQL)]
+            subgraph Data_Subnet ["Data Subnet (10.0.4.0/24)"]
+                Postgres[("Azure PostgreSQL")]
             end
         end
 
