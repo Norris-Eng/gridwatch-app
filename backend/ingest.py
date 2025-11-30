@@ -33,10 +33,11 @@ async def fetch_and_store_data():
     params = {
         "api_key": api_key,
         "frequency": "hourly",
-        "data[]": "value",           # Fixed: Removed index [0]
+        "data[]": "value",
         "facets[respondent][]": "PJM",
-        "start": start_time.strftime("%Y-%m-%dT%H"), # Fixed: Hourly format
-        "end": end_time.strftime("%Y-%m-%dT%H"),     # Fixed: Hourly format
+        # Added extra spaces before comments to satisfy E261
+        "start": start_time.strftime("%Y-%m-%dT%H"),  # Fixed: Hourly format
+        "end": end_time.strftime("%Y-%m-%dT%H"),      # Fixed: Hourly format
         "sort[0][column]": "period",
         "sort[0][direction]": "desc",
         "offset": 0,
@@ -46,7 +47,7 @@ async def fetch_and_store_data():
     # 3. Fetch from EIA
     async with httpx.AsyncClient() as client:
         try:
-            # Using string timeout for EIA as it can be slow
+            # Use string timeout for EIA as it can be slow
             response = await client.get(
                 EIA_URL, params=params, timeout=30.0
             )
