@@ -4,39 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GridWatch Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; text-align: center; }
-        .card { background: white; padding: 20px; margin: 20px auto; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
-        h1 { color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; text-align: center; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* Status Cards */
+        .status-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
         .status-ok { font-weight: bold; color: #28a745; }
         .status-err { color: #dc3545; }
-        .status-warn { color: #ffc107; }
+
+        /* Chart Container */
+        .chart-card { background: white; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; }
+        canvas { max-width: 100%; }
     </style>
 </head>
 <body>
-    <h1>⚡ GridWatch Live</h1>
+    <div class="container">
+        <h1>⚡ GridWatch Live: PJM Interconnection</h1>
 
-    <div class="card">
-        <h3>API System Status</h3>
-        <p>Backend: <span id="api-status">Loading...</span></p>
-        <p>EIA Key: <span id="key-status">Checking...</span></p>
-    </div>
+        <div class="status-row">
+            <div class="card">
+                <h3>System Status</h3>
+                <p>Backend: <span id="api-status">Loading...</span></p>
+                <p>EIA Key: <span id="key-status">Checking...</span></p>
+            </div>
+            <div class="card">
+                <h3>Latest Update</h3>
+                <p id="last-update">Waiting for data...</p>
+            </div>
+        </div>
 
-    <div class="card">
-        <h3>Database Connection</h3>
-        <pre id="db-info" style="text-align: left; font-size: 0.9em; overflow-x: auto;">Waiting...</pre>
+        <div class="chart-card">
+            <h3>Energy Generation Mix (Last 24h)</h3>
+            <canvas id="energyChart"></canvas>
+        </div>
     </div>
 
     <script>
+        // 1. Fetch System Status
         fetch('/api/')
             .then(response => response.json())
             .then(data => {
-                // 1. Update Backend Status
                 const apiElem = document.getElementById('api-status');
                 apiElem.innerText = "Online";
                 apiElem.className = 'status-ok';
 
-                // 2. Update API Key Status
                 const keyElem = document.getElementById('key-status');
                 if (data.api_key_status === 'Loaded') {
                     keyElem.innerText = "Loaded Securely";
@@ -45,14 +60,54 @@
                     keyElem.innerText = "Missing";
                     keyElem.className = 'status-err';
                 }
-
-                // 3. Update DB Info
-                document.getElementById('db-info').innerText = JSON.stringify(data.database_connection, null, 2);
             })
             .catch(err => {
                 document.getElementById('api-status').innerText = "Offline";
                 document.getElementById('api-status').className = 'status-err';
-                console.error(err);
+            });
+
+        // 2. Fetch and Chart History Data
+        fetch('/api/history')
+            .then(res => res.json())
+            .then(records => {
+                if (records.length === 0) return;
+
+                // Update "Latest Update" timestamp
+                document.getElementById('last-update').innerText = new Date(records[0].timestamp).toLocaleString();
+
+                // Process Data for Chart.js
+                // Group values by Timestamp and Fuel Type
+                // Converts the flat list into datasets for the chart
+                const timestamps = [...new Set(records.map(r => r.timestamp))].sort();
+                const fuelTypes = [...new Set(records.map(r => r.fuel_type))];
+
+                const datasets = fuelTypes.map(fuel => {
+                    return {
+                        label: fuel,
+                        data: timestamps.map(t => {
+                            const found = records.find(r => r.timestamp === t && r.fuel_type === fuel);
+                            return found ? found.value : 0;
+                        }),
+                        borderWidth: 1
+                    };
+                });
+
+                // Render Chart
+                const ctx = document.getElementById('energyChart');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: timestamps.map(t => new Date(t).toLocaleTimeString()),
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Megawatt Hours (MWh)' } }
+                        }
+                    }
+                });
             });
     </script>
 </body>
