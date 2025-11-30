@@ -10,6 +10,7 @@ from models import EnergyGeneration
 # Request data for the US lower 48 states
 EIA_URL = "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/"
 
+
 async def fetch_and_store_data():
     """
     Fetches the last 24 hours of energy generation data
@@ -23,7 +24,7 @@ async def fetch_and_store_data():
     print("🚀 Starting data ingestion...")
 
     # 1. Define the time range (Last 24 hours)
-    # EIA data often has a slight lag.
+    # EIA data often has a slight lag, so looking back a bit.
     end_time = datetime.utcnow()
     start_time = end_time - timedelta(hours=24)
 
@@ -31,7 +32,7 @@ async def fetch_and_store_data():
         "api_key": api_key,
         "frequency": "hourly",
         "data[0]": "value",
-        "facets[respondent][]": "US48", # Lower 48 states
+        "facets[respondent][]": "US48",  # Lower 48 states
         "start": start_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "end": end_time.strftime("%Y-%m-%dT%H:%M:%S"),
         "sort[0][column]": "period",
@@ -43,7 +44,9 @@ async def fetch_and_store_data():
     # 2. Fetch from EIA
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(EIA_URL, params=params, timeout=10.0)
+            response = await client.get(
+                EIA_URL, params=params, timeout=10.0
+            )
             response.raise_for_status()
             data = response.json()
         except Exception as e:
@@ -64,9 +67,9 @@ async def fetch_and_store_data():
             # Parse fields
             fuel_type = item.get("fueltype")
             value = float(item.get("value", 0))
-            ts_str = item.get("period") # e.g., "2023-10-27T08:00:00"
+            ts_str = item.get("period")  # e.g., "2023-10-27T08:00:00"
 
-            # Deduplication check:
+            # Simple deduplication check:
             # In a real app, I'd use an 'upsert' statement.
             # Here, just check if a record exists for this time + fuel.
             ts = datetime.strptime(ts_str, "%Y-%m-%dT%H")
@@ -89,6 +92,7 @@ async def fetch_and_store_data():
 
         await session.commit()
         print(f"✅ Successfully saved {count} new records.")
+
 
 if __name__ == "__main__":
     asyncio.run(fetch_and_store_data())
