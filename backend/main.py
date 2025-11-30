@@ -1,38 +1,50 @@
-from fastapi import FastAPI
 import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from database import engine, Base
+import models  # noqa: F401
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan events: Code to run before the app starts
+    and after it shuts down.
+    """
+    # 1. Create Database Tables
+    # This connects to the DB and creates tables defined in models.py
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield
+    # (Shutdown code could go here)
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Read environment variables
-db_host = os.getenv("DB_HOST", "db_host_not_set")
-db_user = os.getenv("DB_USER", "db_user_not_set")
-db_name = os.getenv("DB_NAME", "db_name_not_set")
+db_host = os.getenv("DB_HOST", "not_set")
+eia_key = os.getenv("EIA_API_KEY", "not_set")
 
 
 @app.get("/")
 def read_root():
     """
-    Root endpoint that confirms the API is running
-    and checks if it has successfully loaded database credentials.
+    Root endpoint.
     """
+    # Hide the actual key in response, just show if it's loaded
+    key_status = "Loaded" if eia_key != "not_set" else "Missing"
+
     return {
         "message": "GridWatch API is running.",
         "database_connection": {
             "host": db_host,
-            "user": db_user,
-            "database": db_name
-        }
+            "status": "Connected"
+        },
+        "api_key_status": key_status
     }
 
 
 @app.get("/health")
 def health_check():
-    """
-    Health check endpoint for the container.
-    """
     return {"status": "ok"}
-
-
-# --- Adding dummy comment ---
-# Forcing a new pipeline run
-# -------------------------------
