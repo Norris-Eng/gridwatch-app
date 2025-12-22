@@ -1,3 +1,16 @@
+# LEGACY PROTOTYPE (V1)
+
+**NOTE:** This repository contains the **Proof of Concept (V1)** architecture using Azure Container Apps and PostgreSQL.
+
+🔴 **THIS IS NOT THE LIVE SYSTEM.**
+
+For the **Production (V2)** GridWatch System (Serverless Azure Functions + Data Lake), visit:
+**[GridWatch.live](https://gridwatch.live)**
+
+For the Open-Source **Kill Switch Client Library** (Python), go here:
+**[Kill Switch Client](https://github.com/Norris-Eng/gridwatch-kill-switch.git)**
+
+
 # GridWatch: Real-Time Energy Grid Visualization
 
 ![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
